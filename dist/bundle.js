@@ -453,8 +453,85 @@ function checkDCE() {
 var reactDomExports = reactDom.exports;
 var ReactDOM = /*@__PURE__*/getDefaultExportFromCjs(reactDomExports);
 
+/******************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
+
+
+function __spreadArray(to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+}
+
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
+
+function useDocumentVisibility() {
+    var _a = reactExports.useState(document.visibilityState === "visible"), visible = _a[0], setVisible = _a[1];
+    var _b = reactExports.useState(0), count = _b[0], setCount = _b[1];
+    var _c = reactExports.useState([]), handlers = _c[0], setHandlers = _c[1];
+    var handleVisibilityChange = reactExports.useCallback(function () {
+        var isVisible = document.visibilityState === "visible";
+        console.log(isVisible);
+        setVisible(isVisible);
+        if (!isVisible) {
+            setCount(function (prevCount) { return prevCount + 1; });
+        }
+        handlers.forEach(function (handler) { return handler(isVisible); });
+    }, [handlers]);
+    reactExports.useEffect(function () {
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        return function () {
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [handleVisibilityChange]);
+    var onVisibilityChange = reactExports.useCallback(function (handler) {
+        setHandlers(function (prevHandlers) { return __spreadArray(__spreadArray([], prevHandlers, true), [handler], false); });
+        return function () {
+            setHandlers(function (prevHandlers) { return prevHandlers.filter(function (h) { return h !== handler; }); });
+        };
+    }, []);
+    return { visible: visible, count: count, onVisibilityChange: onVisibilityChange };
+}
+
 var App = function () {
-    return React.createElement("h1", null, "Hello, Rollup + React + TypeScript!");
+    var _a = useDocumentVisibility(), count = _a.count, visible = _a.visible, onVisibilityChange = _a.onVisibilityChange;
+    reactExports.useEffect(function () {
+        onVisibilityChange(function (isVisible) {
+            console.log("first handler", isVisible);
+        });
+        var unsubscribeSecondHandler = onVisibilityChange(function (isVisible) {
+            console.log("second handler", isVisible);
+        });
+        setTimeout(function () { return unsubscribeSecondHandler(); }, 5000); // отписываемся от 'second handler' через 5 секунд
+    }, [onVisibilityChange]);
+    return (React.createElement("div", null,
+        React.createElement("span", null,
+            "\u0412\u044B \u043F\u043E\u043A\u0438\u043D\u0443\u043B\u0438 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443: ",
+            count,
+            " \u0440\u0430\u0437 ",
+            React.createElement("br", null),
+            "\u0412\u043A\u043B\u0430\u0434\u043A\u0430 \u0430\u043A\u0442\u0438\u0432\u043D\u0430? ",
+            visible ? "да" : "нет")));
 };
 
 // const App: React.FC = () => {
