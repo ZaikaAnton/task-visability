@@ -1,5 +1,8 @@
-import React, { useEffect } from "react";
-import { useDocumentVisibility } from "../hook/useDocumentVisibility";
+import React from "react";
+import { useEffect } from "react";
+import { useDocumentVisibility } from "../../node_modules/anton-usedocumentvisibility/useDocumentVisibility1/useDocumentVisibility";
+import Example from "./Example";
+import SecondExample from "./SecondExample";
 
 const App: React.FC = () => {
   const { count, visible, onVisibilityChange } = useDocumentVisibility();
@@ -17,12 +20,16 @@ const App: React.FC = () => {
   }, [onVisibilityChange]);
 
   return (
-    <div>
-      <span>
-        Вы покинули страницу: {count} раз <br />
-        Вкладка активна? {visible ? "да" : "нет"}
-      </span>
-    </div>
+    <>
+      <div>
+        <span>
+          Вы покинули страницу: {count} раз <br />
+          Вкладка активна? {visible ? "да" : "нет"}
+        </span>
+      </div>
+      <Example />
+      <SecondExample />
+    </>
   );
 };
 

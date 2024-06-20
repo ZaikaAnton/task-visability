@@ -486,7 +486,7 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
 };
 
 function useDocumentVisibility() {
-    var _a = reactExports.useState(document.visibilityState === "visible"), visible = _a[0], setVisible = _a[1];
+    var _a = reactExports.useState(function () { return document.visibilityState === "visible"; }), visible = _a[0], setVisible = _a[1];
     var _b = reactExports.useState(0), count = _b[0], setCount = _b[1];
     var _c = reactExports.useState([]), handlers = _c[0], setHandlers = _c[1];
     var handleVisibilityChange = reactExports.useCallback(function () {
@@ -513,6 +513,84 @@ function useDocumentVisibility() {
     return { visible: visible, count: count, onVisibilityChange: onVisibilityChange };
 }
 
+function useMediaQuery(obj) {
+    // Создаем стейт, в котором будет хранится инфа о состояние окна
+    var _a = reactExports.useState(false), state = _a[0], setState = _a[1];
+    reactExports.useEffect(function () {
+        // window.matchMedia(obj.query) - это мы типо получаем MediaQueryList(это объект) - и в его свойство media закидываем значение строки query
+        var mediaQueryList = window.matchMedia(obj.query);
+        // У объекта MediaQueryList - помимо свойства media, которое содержит значение, есть свойство matches, которое содержит булево.
+        // Этим действием мы закидываем ответ от MediaQueryList (ну значение его свойства) в нашу переменную, которая содержит стейт
+        setState(mediaQueryList.matches);
+        // Добавляем обработчик события "change" к mediaQuery, который обновляет состояние matches
+        mediaQueryList.addEventListener("change", function (event) {
+            return setState(event.matches);
+        });
+        //
+        mediaQueryList.removeEventListener("change", function (event) { return event.matches; });
+    });
+    return state;
+}
+
+var Example = function () {
+    var isDesktopOrLaptop = useMediaQuery({
+        query: "(min-width: 1224px)",
+    });
+    var isBigScreen = useMediaQuery({ query: "(min-width: 1824px)" });
+    var isTabletOrMobile = useMediaQuery({ query: "(max-width: 1224px)" });
+    var isPortrait = useMediaQuery({ query: "(orientation: landscape)" });
+    var isRetina = useMediaQuery({ query: "(min-resolution: 2dppx)" });
+    return (React.createElement("div", null,
+        React.createElement("h1", null, "Device Test!"),
+        isDesktopOrLaptop && React.createElement("p", null, "You are a desktop or laptop"),
+        isBigScreen && React.createElement("p", null, "You have a huge screen"),
+        isTabletOrMobile && React.createElement("p", null, "You are a tablet or mobile phone"),
+        React.createElement("p", null,
+            "Your are in ",
+            !isPortrait ? "portrait" : "landscape",
+            " orientation"),
+        isRetina && React.createElement("p", null, "You are retina")));
+};
+
+// Вспомогательная функция для создания условий медиа-запроса
+var createMediaQueryCondition = function (type, value, unit) {
+    if (unit === void 0) { unit = ""; }
+    if (value === undefined)
+        return null;
+    if (typeof value === "number") {
+        return "(".concat(type, ": ").concat(value).concat(unit, ")");
+    }
+    return "(".concat(type, ": ").concat(value, ")");
+};
+var MediaQuery = function (_a) {
+    var orientation = _a.orientation, minResolution = _a.minResolution, maxResolution = _a.maxResolution, minWidth = _a.minWidth, maxWidth = _a.maxWidth, minHeight = _a.minHeight, maxHeight = _a.maxHeight, children = _a.children;
+    var mediaQueryConditions = [
+        createMediaQueryCondition("orientation", orientation),
+        createMediaQueryCondition("min-resolution", minResolution, "dppx"),
+        createMediaQueryCondition("max-resolution", maxResolution, "dppx"),
+        createMediaQueryCondition("min-width", minWidth, "px"),
+        createMediaQueryCondition("max-width", maxWidth, "px"),
+        createMediaQueryCondition("min-height", minHeight, "px"),
+        createMediaQueryCondition("max-height", maxHeight, "px"),
+    ].filter(Boolean);
+    var mediaQueryString = mediaQueryConditions.join(" and ");
+    var matches = window === null || window === void 0 ? void 0 : window.matchMedia(mediaQueryString).matches;
+    if (typeof children === "function") {
+        return children(matches);
+    }
+    return matches ? children : null;
+};
+
+var SecondExample = function () { return (React.createElement("div", null,
+    React.createElement("h1", null, "Device Test!"),
+    React.createElement(MediaQuery, { minWidth: 1224 },
+        React.createElement("p", null, "You are a desktop or laptop"),
+        React.createElement(MediaQuery, { minWidth: 1824 },
+            React.createElement("p", null, "You also have a huge screen"))),
+    React.createElement(MediaQuery, { minResolution: "2dppx" }, function (matches) {
+        return matches ? React.createElement("p", null, "You are retina") : React.createElement("p", null, "You are not retina");
+    }))); };
+
 var App = function () {
     var _a = useDocumentVisibility(), count = _a.count, visible = _a.visible, onVisibilityChange = _a.onVisibilityChange;
     reactExports.useEffect(function () {
@@ -524,14 +602,17 @@ var App = function () {
         });
         setTimeout(function () { return unsubscribeSecondHandler(); }, 5000); // отписываемся от 'second handler' через 5 секунд
     }, [onVisibilityChange]);
-    return (React.createElement("div", null,
-        React.createElement("span", null,
-            "\u0412\u044B \u043F\u043E\u043A\u0438\u043D\u0443\u043B\u0438 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443: ",
-            count,
-            " \u0440\u0430\u0437 ",
-            React.createElement("br", null),
-            "\u0412\u043A\u043B\u0430\u0434\u043A\u0430 \u0430\u043A\u0442\u0438\u0432\u043D\u0430? ",
-            visible ? "да" : "нет")));
+    return (React.createElement(React.Fragment, null,
+        React.createElement("div", null,
+            React.createElement("span", null,
+                "\u0412\u044B \u043F\u043E\u043A\u0438\u043D\u0443\u043B\u0438 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443: ",
+                count,
+                " \u0440\u0430\u0437 ",
+                React.createElement("br", null),
+                "\u0412\u043A\u043B\u0430\u0434\u043A\u0430 \u0430\u043A\u0442\u0438\u0432\u043D\u0430? ",
+                visible ? "да" : "нет")),
+        React.createElement(Example, null),
+        React.createElement(SecondExample, null)));
 };
 
 // const App: React.FC = () => {
