@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-// 3) setHandler - вызывает рендер хука, он не нужен (избавиться от рендера) 4)handleVisibilityChange - Занести под UseEffect
+import { useState, useEffect, useCallback, useRef } from "react";
 
 // Тип для обработчика изменения видимости документа
 type VisibilityChangeHandler = (isVisible: boolean) => void;
@@ -14,41 +13,38 @@ export function useDocumentVisibility() {
   });
 
   const [count, setCount] = useState(0);
-  const [handlers, setHandlers] = useState<VisibilityChangeHandler[]>([]);
-
-  // Функция для обработки изменений видимости документа
-  const handleVisibilityChange = useCallback(() => {
-    if (isSSR) return; // Проверка на SSR
-
-    const isVisible = document.visibilityState === "visible";
-    console.log(isVisible);
-
-    setVisible(isVisible);
-
-    if (!isVisible) {
-      setCount((prevCount) => prevCount + 1);
-    }
-
-    handlers.forEach((handler) => handler(isVisible));
-  }, [handlers, isSSR]);
+  const handlersRef = useRef<VisibilityChangeHandler[]>([]);
 
   // useEffect для добавления/удаления обработчика событий изменения видимости документа
   useEffect(() => {
-    if (isSSR) return; // Проверка на SSR
+    if (isSSR) return;
+
+    // Функция для обработки изменений видимости документа
+    const handleVisibilityChange = () => {
+      const isVisible = document.visibilityState === "visible";
+
+      setVisible(isVisible);
+
+      if (!isVisible) {
+        setCount((prevCount) => prevCount + 1);
+      }
+
+      handlersRef.current.forEach((handler) => handler(isVisible));
+    };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [handleVisibilityChange, isSSR]);
+  }, [isSSR]);
 
   // Функция для добавления обработчиков изменения видимости
   const onVisibilityChange = useCallback((handler: VisibilityChangeHandler) => {
-    setHandlers((prevHandlers) => [...prevHandlers, handler]);
+    handlersRef.current.push(handler);
 
     return () => {
-      setHandlers((prevHandlers) => prevHandlers.filter((h) => h !== handler));
+      handlersRef.current = handlersRef.current.filter((h) => h !== handler);
     };
   }, []);
 
