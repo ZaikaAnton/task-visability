@@ -1,5 +1,5 @@
 import React from "react";
-import { useMediaQuery } from "../hook/useMediaQuery";
+import { useMediaQuery } from "../../node_modules/anton-hookmediaquery/hookMediaQuery/index";
 
 const Example = () => {
   const isDesktopOrLaptop = useMediaQuery({
