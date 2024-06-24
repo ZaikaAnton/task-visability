@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-// 1) SSR из useEffect убрал 2) return isSSR || document.visibilityState === "visible"; - тут поправил
-// 3) const [visible, setVisible] = useState<boolean>(() => { - убрал явное указание типа
+
 // Тип для обработчика изменения видимости документа
 type VisibilityChangeHandler = (isVisible: boolean) => void;
 
