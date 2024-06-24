@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-
+// 1) SSR из useEffect убрал 2) return isSSR || document.visibilityState === "visible"; - тут поправил
+// 3) const [visible, setVisible] = useState<boolean>(() => { - убрал явное указание типа
 // Тип для обработчика изменения видимости документа
 type VisibilityChangeHandler = (isVisible: boolean) => void;
 
@@ -8,8 +9,8 @@ export function useDocumentVisibility() {
   const isSSR = typeof document === "undefined";
 
   // Используем ленивую инициализацию для состояния visible
-  const [visible, setVisible] = useState<boolean>(() => {
-    return !isSSR && document.visibilityState === "visible";
+  const [visible, setVisible] = useState(() => {
+    return isSSR || document.visibilityState === "visible";
   });
 
   const [count, setCount] = useState(0);
@@ -17,8 +18,6 @@ export function useDocumentVisibility() {
 
   // useEffect для добавления/удаления обработчика событий изменения видимости документа
   useEffect(() => {
-    if (isSSR) return;
-
     // Функция для обработки изменений видимости документа
     const handleVisibilityChange = () => {
       const isVisible = document.visibilityState === "visible";
@@ -37,7 +36,7 @@ export function useDocumentVisibility() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isSSR]);
+  }, []);
 
   // Функция для добавления обработчиков изменения видимости
   const onVisibilityChange = useCallback((handler: VisibilityChangeHandler) => {
