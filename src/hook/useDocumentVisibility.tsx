@@ -1,13 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-// Тип для обработчика изменения видимости документа
 type VisibilityChangeHandler = (isVisible: boolean) => void;
 
 export function useDocumentVisibility() {
-  // Проверка на SSR: если document недоступен, установка начального состояния в false
   const isSSR = typeof document === "undefined";
 
-  // Используем ленивую инициализацию для состояния visible
   const [visible, setVisible] = useState(() => {
     return isSSR || document.visibilityState === "visible";
   });
@@ -15,9 +12,7 @@ export function useDocumentVisibility() {
   const [count, setCount] = useState(0);
   const handlersRef = useRef<VisibilityChangeHandler[]>([]);
 
-  // useEffect для добавления/удаления обработчика событий изменения видимости документа
   useEffect(() => {
-    // Функция для обработки изменений видимости документа
     const handleVisibilityChange = () => {
       const isVisible = document.visibilityState === "visible";
 
@@ -37,7 +32,6 @@ export function useDocumentVisibility() {
     };
   }, []);
 
-  // Функция для добавления обработчиков изменения видимости
   const onVisibilityChange = useCallback((handler: VisibilityChangeHandler) => {
     handlersRef.current.push(handler);
 

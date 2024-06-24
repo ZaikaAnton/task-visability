@@ -513,7 +513,7 @@ function useDocumentVisibility() {
     return { visible: visible, count: count, onVisibilityChange: onVisibilityChange };
 }
 
-function useMediaQuery(obj) {
+function useMediaQuery$1(obj) {
     // Создаем стейт, в котором будет хранится инфа о состояние окна
     var _a = reactExports.useState(false), state = _a[0], setState = _a[1];
     reactExports.useEffect(function () {
@@ -533,13 +533,13 @@ function useMediaQuery(obj) {
 }
 
 var Example = function () {
-    var isDesktopOrLaptop = useMediaQuery({
+    var isDesktopOrLaptop = useMediaQuery$1({
         query: "(min-width: 1224px)",
     });
-    var isBigScreen = useMediaQuery({ query: "(min-width: 1824px)" });
-    var isTabletOrMobile = useMediaQuery({ query: "(max-width: 1224px)" });
-    var isPortrait = useMediaQuery({ query: "(orientation: landscape)" });
-    var isRetina = useMediaQuery({ query: "(min-resolution: 2dppx)" });
+    var isBigScreen = useMediaQuery$1({ query: "(min-width: 1824px)" });
+    var isTabletOrMobile = useMediaQuery$1({ query: "(max-width: 1224px)" });
+    var isPortrait = useMediaQuery$1({ query: "(orientation: landscape)" });
+    var isRetina = useMediaQuery$1({ query: "(min-resolution: 2dppx)" });
     return (React.createElement("div", null,
         React.createElement("h1", null, "Device Test!"),
         isDesktopOrLaptop && React.createElement("p", null, "You are a desktop or laptop"),
@@ -552,33 +552,52 @@ var Example = function () {
         isRetina && React.createElement("p", null, "You are retina")));
 };
 
-// Вспомогательная функция для создания условий медиа-запроса
-var createMediaQueryCondition = function (type, value, unit) {
-    if (unit === void 0) { unit = ""; }
-    if (value === undefined)
-        return null;
-    if (typeof value === "number") {
-        return "(".concat(type, ": ").concat(value).concat(unit, ")");
-    }
-    return "(".concat(type, ": ").concat(value, ")");
+function useMediaQuery(_a) {
+    var query = _a.query;
+    var _b = reactExports.useState(function () { return window.matchMedia(query).matches; }), matches = _b[0], setMatches = _b[1];
+    reactExports.useEffect(function () {
+        var mediaQueryList = window.matchMedia(query);
+        var handleChange = function (event) {
+            setMatches(event.matches);
+        };
+        setMatches(mediaQueryList.matches);
+        mediaQueryList.addEventListener("change", handleChange);
+        return function () {
+            mediaQueryList.removeEventListener("change", handleChange);
+        };
+    }, [query]);
+    return matches;
+}
+
+// Утилита для создания строки медиа-запроса на основе переданных свойств
+var buildMediaQueryString = function (props) {
+    var conditions = Object.keys(props)
+        .filter(function (key) {
+        return key !== "children" && props[key] !== undefined;
+    })
+        .map(function (key) {
+        var value = props[key];
+        switch (key) {
+            case "orientation":
+                return "(".concat(key, ": ").concat(value, ")");
+            case "minResolution":
+            case "maxResolution":
+                return "(".concat(key.replace(/([A-Z])/g, "-$1").toLowerCase(), ": ").concat(value, ")");
+            default:
+                return "(".concat(key
+                    .replace(/([A-Z])/g, "-$1")
+                    .toLowerCase(), ": ").concat(value, "px)");
+        }
+    });
+    return conditions.length ? conditions.join(" and ") : null;
 };
-var MediaQuery = function (_a) {
-    var orientation = _a.orientation, minResolution = _a.minResolution, maxResolution = _a.maxResolution, minWidth = _a.minWidth, maxWidth = _a.maxWidth, minHeight = _a.minHeight, maxHeight = _a.maxHeight, children = _a.children;
-    var mediaQueryConditions = [
-        createMediaQueryCondition("orientation", orientation),
-        createMediaQueryCondition("min-resolution", minResolution, "dppx"),
-        createMediaQueryCondition("max-resolution", maxResolution, "dppx"),
-        createMediaQueryCondition("min-width", minWidth, "px"),
-        createMediaQueryCondition("max-width", maxWidth, "px"),
-        createMediaQueryCondition("min-height", minHeight, "px"),
-        createMediaQueryCondition("max-height", maxHeight, "px"),
-    ].filter(Boolean);
-    var mediaQueryString = mediaQueryConditions.join(" and ");
-    var matches = window === null || window === void 0 ? void 0 : window.matchMedia(mediaQueryString).matches;
-    if (typeof children === "function") {
-        return children(matches);
+var MediaQuery = function (props) {
+    var mediaQueryString = buildMediaQueryString(props);
+    var matches = useMediaQuery({ query: mediaQueryString || "" });
+    if (typeof props.children === "function") {
+        return React.createElement(React.Fragment, null, props.children(matches));
     }
-    return matches ? children : null;
+    return matches ? React.createElement(React.Fragment, null, props.children) : null;
 };
 
 var SecondExample = function () { return (React.createElement("div", null,

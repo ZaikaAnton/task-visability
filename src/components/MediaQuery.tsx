@@ -1,56 +1,50 @@
 import React from "react";
 import { ReactNode } from "react";
+import { useMediaQuery } from "../hook/useMediaQuery"; // Подставьте путь к вашему хуку useMediaQuery
 
 interface MediaProps {
-  orientation: string;
-  minResolution: `${number}dppx`;
-  maxResolution: `${number}dppx`;
-  minWidth: number;
-  maxWidth: number;
-  minHeight: number;
-  maxHeight: number;
+  orientation?: string;
+  minResolution?: `${number}dppx`;
+  maxResolution?: `${number}dppx`;
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
   children: ReactNode | ((matches: boolean) => ReactNode);
 }
 
-// Вспомогательная функция для создания условий медиа-запроса
-const createMediaQueryCondition = (
-  type: string,
-  value: string | number | undefined,
-  unit: string = ""
-) => {
-  if (value === undefined) return null;
-  if (typeof value === "number") {
-    return `(${type}: ${value}${unit})`;
-  }
-  return `(${type}: ${value})`;
+// Утилита для создания строки медиа-запроса на основе переданных свойств
+const buildMediaQueryString = (props: Partial<MediaProps>): string | null => {
+  const conditions = Object.keys(props)
+    .filter(
+      (key) =>
+        key !== "children" && props[key as keyof MediaProps] !== undefined
+    )
+    .map((key) => {
+      const value = props[key as keyof MediaProps];
+      switch (key) {
+        case "orientation":
+          return `(${key}: ${value})`;
+        case "minResolution":
+        case "maxResolution":
+          return `(${key.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${value})`;
+        default:
+          return `(${key
+            .replace(/([A-Z])/g, "-$1")
+            .toLowerCase()}: ${value}px)`;
+      }
+    });
+
+  return conditions.length ? conditions.join(" and ") : null;
 };
 
-export const MediaQuery: React.FC<Partial<MediaProps>> = ({
-  orientation,
-  minResolution,
-  maxResolution,
-  minWidth,
-  maxWidth,
-  minHeight,
-  maxHeight,
-  children,
-}) => {
-  const mediaQueryConditions = [
-    createMediaQueryCondition("orientation", orientation),
-    createMediaQueryCondition("min-resolution", minResolution, "dppx"),
-    createMediaQueryCondition("max-resolution", maxResolution, "dppx"),
-    createMediaQueryCondition("min-width", minWidth, "px"),
-    createMediaQueryCondition("max-width", maxWidth, "px"),
-    createMediaQueryCondition("min-height", minHeight, "px"),
-    createMediaQueryCondition("max-height", maxHeight, "px"),
-  ].filter(Boolean);
+export const MediaQuery: React.FC<Partial<MediaProps>> = (props) => {
+  const mediaQueryString = buildMediaQueryString(props);
 
-  const mediaQueryString = mediaQueryConditions.join(" and ");
+  const matches = useMediaQuery({ query: mediaQueryString || "" });
 
-  const matches = window?.matchMedia(mediaQueryString).matches;
-
-  if (typeof children === "function") {
-    return children(matches);
+  if (typeof props.children === "function") {
+    return <>{props.children(matches)}</>;
   }
-  return matches ? children : null;
+  return matches ? <>{props.children}</> : null;
 };
