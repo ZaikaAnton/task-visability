@@ -23,6 +23,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "anton-hookmediaquery": "^0.0.1",
+    "anton-usedocumentvisibility": "^0.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   }
