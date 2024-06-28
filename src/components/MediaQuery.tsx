@@ -13,7 +13,6 @@ interface MediaProps {
   children: ReactNode | ((matches: boolean) => ReactNode);
 }
 
-// Утилита для создания строки медиа-запроса на основе переданных свойств
 const buildMediaQueryString = (props: Partial<MediaProps>): string | null => {
   const conditions = Object.keys(props)
     .filter(
